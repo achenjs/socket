@@ -3,7 +3,7 @@ socket.io
 
 现在很流行的websocket的实现socket.io同样包括客户端和服务器端两部分。它不仅简化了接口，使得操作更容易，而且对于那些不支持WebSocket的浏览器，会自动降为Ajax连接，最大限度地保证了兼容性。它的目标是统一通信机制，使得所有浏览器和移动设备都可以进行实时通信。
 
-4.1 socket.io与WebSocket的区别在哪里呢？ 
+1. socket.io与WebSocket的区别在哪里呢？ 
 
 websocket是浏览器对象，websocket api是浏览器提供给我们的用于浏览器和服务器实时通信的接口。
 
@@ -13,7 +13,7 @@ websocket在node中的实现使我们可以开发服务端程序时使用websock
 
 [ Differences between socket.io and websocket ] 。而socket.io则是进化了的websocket api。socket.io建立在websocket之上，它在合适的时候使用websocket。
 
-4.2 socket.io实现聊天室
+2. socket.io实现聊天室
 
 使用websocket或socket.io可以从一个简单的聊天室程序开始。对于socket.io来说，这非常容易。
 
@@ -27,85 +27,80 @@ websocket在node中的实现使我们可以开发服务端程序时使用websock
 
 package.json:
 
-
-1 {
-2   "name": "chat-application",
+{
+ "name": "chat-application",
 3   "version": "0.0.1",
 4   "description": "my first socket.io app",
 5   "dependencies": {
 6     "socket.io": "^1.3.5"
 7   }
 8 }
-View Code
+
 index.js:
 
+var app = require('express')();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
 
- 1 var app = require('express')();
- 2 var http = require('http').Server(app);
- 3 var io = require('socket.io')(http);
- 4 
- 5 app.get('/', function(req, res){
- 6   res.sendfile('index.html');
- 7 });
- 8 
- 9 io.on('connection', function(socket){
-10   console.log('a user connected');
-11   //监听客户端的消息
-12   socket.on('chat message', function(msg){
-13       //用于将消息发送给每个人，包括发送者
-14     io.emit('chat message', msg);
-15   });
-16   socket.on('disconnect', function(){
-17     console.log('user disconnected');
-18   });
-19 });
-20 
-21 http.listen(3000, function(){
-22   console.log('listening on *:3000');
-23 });
-View Code
+app.get('/', function(req, res){
+  res.sendfile('index.html');
+});
+
+io.on('connection', function(socket){
+   console.log('a user connected');
+   //监听客户端的消息
+   socket.on('chat message', function(msg){
+       //用于将消息发送给每个人，包括发送者
+     io.emit('chat message', msg);
+   });
+   socket.on('disconnect', function(){
+     console.log('user disconnected');
+   });
+ });
+
+ http.listen(3000, function(){
+   console.log('listening on *:3000');
+ });
+
 index.html:
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+       #messages { list-style-type: none; margin: 0; padding: 0; }
+       #messages li { padding: 5px 10px; }
+       #messages li:nth-child(odd) { background: #eee; }
+     </style>
+   </head>
+   <body>
+     <ul id="messages"></ul>
+     <form action="">
+       <input id="m" autocomplete="off" /><button>Send</button>
+     </form>
+     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+     <script>
+       var socket = io();
+       $('form').submit(function(){
+         //io.emit提供给我们可以发送给所有人的事件io.emit('some event', { for: 'everyone' });
+         socket.emit('chat message', $('#m').val());
+         $('#m').val('');
+         return false;
+       });
+      socket.on('chat message', function(msg){
+        $('#messages').append($('<li>').text(msg));
+       });
+     </script>
+   </body>
+</html>
 
-
- 1 <!doctype html>
- 2 <html>
- 3   <head>
- 4     <title>Socket.IO chat</title>
- 5     <style>
- 6       * { margin: 0; padding: 0; box-sizing: border-box; }
- 7       body { font: 13px Helvetica, Arial; }
- 8       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
- 9       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-10       form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-11       #messages { list-style-type: none; margin: 0; padding: 0; }
-12       #messages li { padding: 5px 10px; }
-13       #messages li:nth-child(odd) { background: #eee; }
-14     </style>
-15   </head>
-16   <body>
-17     <ul id="messages"></ul>
-18     <form action="">
-19       <input id="m" autocomplete="off" /><button>Send</button>
-20     </form>
-21     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-22     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-23     <script>
-24       var socket = io();
-25       $('form').submit(function(){
-26         //io.emit提供给我们可以发送给所有人的事件io.emit('some event', { for: 'everyone' });
-27         socket.emit('chat message', $('#m').val());
-28         $('#m').val('');
-29         return false;
-30       });
-31       socket.on('chat message', function(msg){
-32         $('#messages').append($('<li>').text(msg));
-33       });
-34     </script>
-35   </body>
-36 </html>
-View Code
 先运行：
-
 node index.js
 在打开两个http://localhost:3000的窗口就可以开始聊天了：
 
